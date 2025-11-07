@@ -1,32 +1,95 @@
-import express from 'express';
-import { checkElasticConnection } from './config/elasticsearch';
-import { redisClient } from './config/redis';
-import dotenv from 'dotenv';
-import emailRoutes from "./routes/emailRoutes";
+import express, { Application } from 'express';
+import cors from 'cors';
+import { config } from './config/env';
+import { initializeElasticsearch } from './config/elasticsearch';
+import { imapManager } from './services/imap/ImapManager';
+import { emailProcessor } from './services/EmailProcessor';
+import logger from './utils/logger';
+import { errorHandler } from './middleware/errorHandler';
 
-dotenv.config();
+// Routes
+import accountsRoutes from './routes/accounts.routes';
+import syncRoutes from './routes/sync.routes';
+import emailsRoutes from './routes/emails.routes';
+import integrationsRoutes from './routes/integrations.routes';
 
-const app = express();
+const app: Application = express();
+
+// Middleware
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// API routes
-app.use("/api", emailRoutes);
+// Request logging
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.path}`);
+  next();
+});
 
-// Default route
-app.get('/', (req, res) => res.send('🚀 Email Onebox Backend Running!'));
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    accounts: imapManager.getAccountCount(),
+  });
+});
 
-const startServer = async () => {
+// API Routes
+app.use('/api/accounts', accountsRoutes);
+app.use('/api/sync', syncRoutes);
+app.use('/api/emails', emailsRoutes);
+app.use('/api/integrations', integrationsRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
+  });
+});
+
+// Error handler
+app.use(errorHandler);
+
+// Initialize services and start server
+async function startServer() {
   try {
-    await checkElasticConnection();
-    await redisClient.connect();
+    // Initialize Elasticsearch
+    await initializeElasticsearch();
+    logger.info('Elasticsearch initialized');
 
-    const PORT = process.env.PORT || 4000;
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
+    // Set up IMAP manager event listeners
+    imapManager.on('email', async (email) => {
+      logger.info(`New email received: ${email.subject}`);
+      await emailProcessor.processEmail(email);
+    });
+
+    // Start Express server
+    app.listen(config.port, () => {
+      logger.info(``);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    logger.error('Failed to start server:', error);
+    process.exit(1);
   }
-};
+}
 
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully...');
+  imapManager.stopAllSyncs();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully...');
+  imapManager.stopAllSyncs();
+  process.exit(0);
+});
+
+// Start the server
 startServer();
+
+export default app;
