@@ -1,0 +1,28 @@
+# Node modules (we'll install them in the container)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# TypeScript build outputs
+dist
+build
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# VS Code
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Others
+*.swp
+*.swo
