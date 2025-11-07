@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailAccount } from '../types';
-import { imapManager } from '../services/imap/ImapManager';
+import { imapManager } from '../services/imap/imapManager';
 import { encrypt } from '../utils/encryption';
 import { redisClient } from '../config/redis';
 import logger from '../utils/logger';
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
 
 export class AccountController {
   async addAccount(req: Request, res: Response): Promise<void> {

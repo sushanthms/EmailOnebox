@@ -4,9 +4,9 @@ import { Email } from '../../types';
 import logger from '../../utils/logger';
 
 export class SlackNotifier {
-  private client: WebClient;
-  private channelId: string;
-  private enabled: boolean;
+  private client: WebClient | null = null;
+  private channelId: string | null = null;
+  private enabled: boolean = false;
 
   constructor() {
     this.enabled = !!(config.slack.botToken && config.slack.channelId);
@@ -21,7 +21,7 @@ export class SlackNotifier {
   }
 
   async sendInterestedNotification(email: Email): Promise<void> {
-    if (!this.enabled) {
+    if (!this.enabled || !this.client || !this.channelId) {
       logger.warn('Slack notifications disabled');
       return;
     }
@@ -90,7 +90,7 @@ export class SlackNotifier {
   }
 
   async sendCustomMessage(text: string, title?: string): Promise<void> {
-    if (!this.enabled) {
+    if (!this.enabled || !this.client || !this.channelId) {
       logger.warn('Slack notifications disabled');
       return;
     }

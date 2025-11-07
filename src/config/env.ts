@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
+import { validateEnv } from './validation';
+
 dotenv.config();
+validateEnv(); // ADDED - Validate on load
 
 export const config = {
   port: parseInt(process.env.PORT || '3000'),

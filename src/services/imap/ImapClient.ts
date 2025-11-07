@@ -1,15 +1,20 @@
 import Imap from 'node-imap';
-import { simpleParser, ParsedMail } from 'mailparser';
+import type { ImapMessage } from 'node-imap';
+import { simpleParser } from 'mailparser';
+import type { ParsedMail } from 'mailparser';
 import { EventEmitter } from 'events';
 import { EmailAccount, Email, EmailAddress, Attachment } from '../../types';
 import { decrypt } from '../../utils/encryption';
 import logger from '../../utils/logger';
 
 export class ImapClient extends EventEmitter {
-  private imap: Imap | null = null;
+  private imap: any | null = null; // Changed from Imap to any
   private account: EmailAccount;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private isConnecting = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+
 
   constructor(account: EmailAccount) {
     super();
@@ -25,7 +30,6 @@ export class ImapClient extends EventEmitter {
 
     try {
       const password = decrypt(this.account.imap.password);
-
       this.imap = new Imap({
         user: this.account.imap.user,
         password: password,
@@ -41,7 +45,6 @@ export class ImapClient extends EventEmitter {
       });
 
       this.setupEventHandlers();
-
       await new Promise<void>((resolve, reject) => {
         this.imap!.once('ready', () => resolve());
         this.imap!.once('error', reject);
@@ -51,6 +54,7 @@ export class ImapClient extends EventEmitter {
       logger.info(`IMAP connected for account: ${this.account.email}`);
       this.emit('connected', this.account.id);
       this.isConnecting = false;
+      this.reconnectAttempts = 0; // ADDED - Reset on successful connection
     } catch (error) {
       this.isConnecting = false;
       logger.error(`IMAP connection failed for ${this.account.email}:`, error);
@@ -59,10 +63,10 @@ export class ImapClient extends EventEmitter {
     }
   }
 
-  private setupEventHandlers(): void {
+ private setupEventHandlers(): void {
     if (!this.imap) return;
 
-    this.imap.on('error', (err) => {
+    this.imap.on('error', (err: Error) => {
       logger.error(`IMAP error for ${this.account.email}:`, err);
       this.emit('error', err);
       this.scheduleReconnect();
@@ -74,7 +78,7 @@ export class ImapClient extends EventEmitter {
       this.scheduleReconnect();
     });
 
-    this.imap.on('mail', (numNew) => {
+    this.imap.on('mail', (numNew: number) => {
       logger.info(`${numNew} new mail(s) for ${this.account.email}`);
       this.fetchNewEmails();
     });
@@ -87,7 +91,7 @@ export class ImapClient extends EventEmitter {
         return;
       }
 
-      this.imap.openBox('INBOX', false, (err, box) => {
+      this.imap.openBox('INBOX', false, (err: Error, box: any) => {
         if (err) reject(err);
         else resolve();
       });
@@ -114,7 +118,7 @@ export class ImapClient extends EventEmitter {
       const searchDate = new Date();
       searchDate.setDate(searchDate.getDate() - days);
 
-      this.imap!.search(['ALL', ['SINCE', searchDate]], (err, results) => {
+      this.imap!.search(['ALL', ['SINCE', searchDate]], (err: Error, results: number[]) => {
         if (err) {
           reject(err);
           return;
@@ -128,11 +132,11 @@ export class ImapClient extends EventEmitter {
         const emails: Email[] = [];
         const fetch = this.imap!.fetch(results, { bodies: '', markSeen: false });
 
-        fetch.on('message', (msg) => {
+        fetch.on('message', (msg: any) => {
           let buffer = '';
 
-          msg.on('body', (stream) => {
-            stream.on('data', (chunk) => {
+          msg.on('body', (stream: NodeJS.ReadableStream) => {
+            stream.on('data', (chunk: Buffer) => {
               buffer += chunk.toString('utf8');
             });
           });
@@ -163,7 +167,7 @@ export class ImapClient extends EventEmitter {
 
     try {
       // Fetch unseen emails
-      this.imap.search(['UNSEEN'], (err, results) => {
+      this.imap.search(['UNSEEN'], (err: Error, results: number[]) => {
         if (err) {
           logger.error('Error searching for new emails:', err);
           return;
@@ -173,11 +177,11 @@ export class ImapClient extends EventEmitter {
 
         const fetch = this.imap!.fetch(results, { bodies: '', markSeen: false });
 
-        fetch.on('message', (msg) => {
+        fetch.on('message', (msg: any) => {
           let buffer = '';
 
-          msg.on('body', (stream) => {
-            stream.on('data', (chunk) => {
+          msg.on('body', (stream: NodeJS.ReadableStream) => {
+            stream.on('data', (chunk: Buffer) => {
               buffer += chunk.toString('utf8');
             });
           });
@@ -194,7 +198,7 @@ export class ImapClient extends EventEmitter {
           });
         });
 
-        fetch.once('error', (err) => {
+        fetch.once('error', (err: Error) => {
           logger.error('Error fetching new emails:', err);
         });
       });
@@ -203,7 +207,7 @@ export class ImapClient extends EventEmitter {
     }
   }
 
-  private parseEmail(parsed: ParsedMail): Email {
+  private parseEmail(parsed: any): Email {
     const from: EmailAddress = {
       email: parsed.from?.value[0]?.address || '',
       name: parsed.from?.value[0]?.name,
@@ -242,17 +246,31 @@ export class ImapClient extends EventEmitter {
     };
   }
 
-  private scheduleReconnect(): void {
+ private scheduleReconnect(): void {
+    // ADDED - Check max attempts
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      logger.error(
+        `Max reconnection attempts (${this.maxReconnectAttempts}) reached for ${this.account.email}`
+      );
+      this.emit('max_reconnect_attempts', this.account.id);
+      return;
+    }
+
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
 
+    this.reconnectAttempts++; // ADDED
+    const delay = Math.min(30000 * this.reconnectAttempts, 300000); // ADDED - Exponential backoff
+
     this.reconnectTimer = setTimeout(() => {
-      logger.info(`Attempting to reconnect ${this.account.email}...`);
+      logger.info(
+        `Attempting to reconnect ${this.account.email} (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
+      );
       this.connect().catch((err) => {
         logger.error(`Reconnection failed for ${this.account.email}:`, err);
       });
-    }, 30000); // Retry after 30 seconds
+    }, delay); // CHANGED - Use exponential backoff
   }
 
   disconnect(): void {
@@ -262,9 +280,12 @@ export class ImapClient extends EventEmitter {
     }
 
     if (this.imap) {
+      this.imap.removeAllListeners(); // ADDED - Prevent memory leaks
       this.imap.end();
       this.imap = null;
     }
+
+    this.removeAllListeners(); // ADDED - Clean up event emitter
 
     logger.info(`IMAP disconnected for ${this.account.email}`);
   }

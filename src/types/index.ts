@@ -17,6 +17,7 @@ export interface Email {
   accountId: string;
   from: EmailAddress;
   to: EmailAddress[];
+  cc?: EmailAddress[]; // ADDED
   subject: string;
   body: string;
   htmlBody?: string;
@@ -26,6 +27,7 @@ export interface Email {
   isRead: boolean;
   hasAttachments: boolean;
   attachments?: Attachment[];
+  headers?: any; // ADDED
 }
 
 export interface EmailAddress {
@@ -37,6 +39,7 @@ export interface Attachment {
   filename: string;
   contentType: string;
   size: number;
+  content?: Buffer; // ADDED
 }
 
 export enum EmailCategory {
@@ -53,6 +56,17 @@ export interface SearchQuery {
   accountId?: string;
   folder?: string;
   category?: EmailCategory;
+  from?: Date; // ADDED
+  to?: Date; // ADDED
   page?: number;
   limit?: number;
+}
+
+// ADDED - Missing interface
+export interface SyncStatus {
+  accountId: string;
+  isConnected: boolean;
+  emailsSynced: number;
+  lastSync?: Date;
+  error?: string;
 }

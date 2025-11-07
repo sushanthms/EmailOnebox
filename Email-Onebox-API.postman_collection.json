@@ -1,0 +1,348 @@
+{
+  "info": {
+    "name": "Email Onebox API",
+    "description": "Complete API collection for testing the Email Onebox system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Account Management",
+      "item": [
+        {
+          "name": "Add Gmail Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"your-email@gmail.com\",\n  \"imap\": {\n    \"host\": \"imap.gmail.com\",\n    \"port\": 993,\n    \"secure\": true,\n    \"user\": \"your-email@gmail.com\",\n    \"password\": \"your-app-password\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "accounts"]
+            }
+          }
+        },
+        {
+          "name": "Add Outlook Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"your-outlook@outlook.com\",\n  \"imap\": {\n    \"host\": \"imap.outlook.com\",\n    \"port\": 993,\n    \"secure\": true,\n    \"user\": \"your-outlook@outlook.com\",\n    \"password\": \"your-password\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "accounts"]
+            }
+          }
+        },
+        {
+          "name": "List All Accounts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "accounts"]
+            }
+          }
+        },
+        {
+          "name": "Get Account Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/accounts/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "accounts", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your-account-id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "http://localhost:3000/api/accounts/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "accounts", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your-account-id"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Operations",
+      "item": [
+        {
+          "name": "Search Emails",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/search?q=meeting&accountId=your-account-id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "meeting"
+                },
+                {
+                  "key": "accountId",
+                  "value": "your-account-id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Email by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your-email-id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Category - Interested",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/category/interested",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "category", "interested"]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Category - Meeting Booked",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/category/meeting_booked",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "category", "meeting_booked"]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Category - Not Interested",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/category/not_interested",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "category", "not_interested"]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Category - Spam",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/category/spam",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "category", "spam"]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Category - Out of Office",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/category/out_of_office",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "category", "out_of_office"]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Folder - INBOX",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/folder/INBOX",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "folder", "INBOX"]
+            }
+          }
+        },
+        {
+          "name": "Get Emails by Folder - Sent",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/emails/folder/Sent",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails", "folder", "Sent"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sync Management",
+      "item": [
+        {
+          "name": "Start Email Sync",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3000/api/sync/start",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "sync", "start"]
+            }
+          }
+        },
+        {
+          "name": "Stop Email Sync",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3000/api/sync/stop",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "sync", "stop"]
+            }
+          }
+        },
+        {
+          "name": "Get Sync Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/api/sync/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "sync", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integrations",
+      "item": [
+        {
+          "name": "Test Slack Integration",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3000/api/integrations/slack/test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "integrations", "slack", "test"]
+            }
+          }
+        },
+        {
+          "name": "Test Webhook Integration",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:3000/api/integrations/webhook/test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "integrations", "webhook", "test"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

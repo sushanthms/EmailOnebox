@@ -1,9 +1,11 @@
 import express, { Application } from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { config } from './config/env';
 import { initializeElasticsearch } from './config/elasticsearch';
-import { imapManager } from './services/imap/ImapManager';
+import { imapManager } from './services/imap/imapManager';
 import { emailProcessor } from './services/EmailProcessor';
+import { redisClient } from './config/redis';
 import logger from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -15,10 +17,18 @@ import integrationsRoutes from './routes/integrations.routes';
 
 const app: Application = express();
 
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/', limiter);
 
 // Request logging
 app.use((req, res, next) => {
@@ -53,12 +63,36 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler);
 
+// Restore accounts from Redis
+async function restoreAccounts() {
+  try {
+    const keys = await redisClient.keys('account:*');
+    logger.info(`Found ${keys.length} stored accounts`);
+
+    for (const key of keys) {
+      const data = await redisClient.get(key);
+      if (data) {
+        const account = JSON.parse(data);
+        await imapManager.addAccount(account);
+        logger.info(`Restored account: ${account.email}`);
+      }
+    }
+
+    logger.info(`Restored ${keys.length} accounts successfully`);
+  } catch (error) {
+    logger.error('Failed to restore accounts:', error);
+  }
+}
+
 // Initialize services and start server
 async function startServer() {
   try {
     // Initialize Elasticsearch
     await initializeElasticsearch();
     logger.info('Elasticsearch initialized');
+
+    // Restore accounts from Redis
+    await restoreAccounts();
 
     // Set up IMAP manager event listeners
     imapManager.on('email', async (email) => {
@@ -68,7 +102,7 @@ async function startServer() {
 
     // Start Express server
     app.listen(config.port, () => {
-      logger.info(``);
+      logger.info(`Server started on port ${config.port}`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

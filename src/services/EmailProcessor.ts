@@ -1,5 +1,5 @@
 import { Email, EmailCategory } from '../types';
-import { emailIndexer } from './elasticsearch/EmailIndexer';
+import { emailIndexer } from './elasticsearch/emailIndexer';
 import { emailCategorizer } from './ai/EmailCategorizer';
 import { slackNotifier } from './integrations/SlackNotifier';
 import { webhookDispatcher } from './integrations/WebhookDispatcher';

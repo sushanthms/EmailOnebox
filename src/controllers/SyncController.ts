@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { imapManager } from '../services/imap/ImapManager';
+import { imapManager } from '../services/imap/imapManager';
 import logger from '../utils/logger';
 
 export class SyncController {

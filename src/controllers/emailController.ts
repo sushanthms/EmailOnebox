@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { searchService } from '../services/elasticsearch/SearchService';
-import { emailIndexer } from '../services/elasticsearch/EmailIndexer';
+import { emailIndexer } from '../services/elasticsearch/emailIndexer';
 import { SearchQuery } from '../types';
 import logger from '../utils/logger';
 
