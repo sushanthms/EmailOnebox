@@ -1,7 +1,6 @@
 import Imap from 'node-imap';
 import type { ImapMessage } from 'node-imap';
 import { simpleParser } from 'mailparser';
-import type { ParsedMail } from 'mailparser';
 import { EventEmitter } from 'events';
 import { EmailAccount, Email, EmailAddress, Attachment } from '../../types';
 import { decrypt } from '../../utils/encryption';
